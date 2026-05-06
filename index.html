@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>ইনকাম ড্যাশবোর্ড | এড ভিউ আয়</title>
+    <title>ফ্রি আর্ন | AdsGram ইন্টিগ্রেটেড</title>
     <style>
         * {
             margin: 0;
@@ -227,6 +227,8 @@
             margin-top: 5px;
         }
     </style>
+    <!-- AdsGram SDK -->
+    <script src="https://cdn.adsgram.ai/js/adsgram.js"></script>
 </head>
 <body>
 <div class="app">
@@ -300,34 +302,23 @@
 
 <script>
     // ============================================================
-    // 📢 এখানে আপনার লিংক বসান (সহজ সিরিয়াল ফরম্যাটে)
+    // 📢 আপনার লিংক বসান (সহজ সিরিয়াল ফরম্যাটে)
     // ============================================================
     
-    // ===== ১. টেলিগ্রাম চ্যানেল লিংক =====
-    // নিচের লিংকটি আপনার টেলিগ্রাম চ্যানেলের লিংক দিয়ে পরিবর্তন করুন
     const TELEGRAM_CHANNEL_LINK = "https://t.me/your_channel";
     
-    
-    // ===== ২. এড লিংক (১০টি) =====
-    // নিচের ১০টি লিংক আপনার নিজের এড লিংক দিয়ে পরিবর্তন করুন
-    // সিরিয়াল নম্বর অনুযায়ী বসালেই হবে
-    
     const AD_LINKS = [
-        "https://example.com/ad1",   // এড ১ - আপনার লিংক এখানে বসান
-        "https://example.com/ad2",   // এড ২ - আপনার লিংক এখানে বসান
-        "https://example.com/ad3",   // এড ৩ - আপনার লিংক এখানে বসান
-        "https://example.com/ad4",   // এড ৪ - আপনার লিংক এখানে বসান
-        "https://example.com/ad5",   // এড ৫ - আপনার লিংক এখানে বসান
-        "https://example.com/ad6",   // এড ৬ - আপনার লিংক এখানে বসান
-        "https://example.com/ad7",   // এড ৭ - আপনার লিংক এখানে বসান
-        "https://example.com/ad8",   // এড ৮ - আপনার লিংক এখানে বসান
-        "https://example.com/ad9",   // এড ৯ - আপনার লিংক এখানে বসান
-        "https://example.com/ad10"   // এড ১০ - আপনার লিংক এখানে বসান
+        "https://example.com/ad1", "https://example.com/ad2", "https://example.com/ad3",
+        "https://example.com/ad4", "https://example.com/ad5", "https://example.com/ad6",
+        "https://example.com/ad7", "https://example.com/ad8", "https://example.com/ad9",
+        "https://example.com/ad10"
     ];
     
-    // ============================================================
-    // ⚠️ নিচের কোডে কোনো পরিবর্তন করার দরকার নেই
-    // শুধু উপরের লিংকগুলো বসালেই কাজ করবে
+    // ================== AdsGram কনফিগারেশন ==================
+    // আপনার Platform ID এবং Block ID এখানে বসান
+    const ADSGRAM_PLATFORM_ID = 28645;      // আপনার প্ল্যাটফর্ম আইডি
+    const ADSGRAM_BLOCK_ID = "YOUR_BLOCK_ID"; // আপনি ব্লক তৈরি করলে যে ID পাবেন
+    
     // ============================================================
 
     let user = {
@@ -475,6 +466,25 @@
         }, 1000);
     }
 
+    // 🎯 AdsGram বিজ্ঞাপন দেখানোর ফাংশন
+    function showAdsGramAd(taskId) {
+        return new Promise((resolve, reject) => {
+            try {
+                const adController = Adsgram.getBlock(ADSGRAM_PLATFORM_ID);
+                adController.show().then(() => {
+                    console.log("AdsGram এড সম্পন্ন হয়েছে");
+                    resolve();
+                }).catch((err) => {
+                    console.error("AdsGram এড লোড হয়নি:", err);
+                    reject(err);
+                });
+            } catch(e) {
+                console.error("AdsGram initialization error:", e);
+                reject(e);
+            }
+        });
+    }
+
     function renderDailyJobs() {
         const container = document.getElementById("dailyJobList");
         if(!container) return;
@@ -499,7 +509,7 @@
             if(ad.status === "pending") {
                 instructionHtml = `<div class="ad-instruction">
                     <span>⏱️</span>
-                    <span><strong>কিভাবে করবেন:</strong> "এড দেখুন" ক্লিক করুন → ১০ সেকেন্ড এড দেখুন → ব্যাক করে এসে "পয়েন্ট নিন" ক্লিক করুন</span>
+                    <span><strong>কিভাবে করবেন:</strong> "এড দেখুন" ক্লিক করুন → AdsGram এড দেখুন → এড শেষ হলে ১০ সেকেন্ড অপেক্ষা করুন → "পয়েন্ট নিন" ক্লিক করুন</span>
                 </div>`;
             } else if(ad.status === "ready") {
                 instructionHtml = `<div class="ad-instruction">
@@ -534,15 +544,38 @@
         });
     }
 
-    function handleAdAction(adId) {
+    // 🎯 আপডেটেড হ্যান্ডেলার (AdsGram ব্যবহার করবে)
+    async function handleAdAction(adId) {
         const ad = user.dailyAds.find(a => a.id === adId);
         if(!ad) return;
+        
         if(ad.status === "pending") {
-            const start = Date.now();
-            sessionStorage.setItem(`adTimer_${adId}`, start);
-            window.open(ad.adUrl, "_blank");
-            showToast("⏱️ এড খুলে গেছে! দয়া করে ১০ সেকেন্ড অপেক্ষা করুন, তারপর ব্যাক করে এসে 'পয়েন্ট নিন' ক্লিক করুন।");
+            try {
+                // AdsGram বিজ্ঞাপন দেখান
+                await showAdsGramAd(adId);
+                // এড শেষ হলে টাইমার স্টার্ট
+                const start = Date.now();
+                sessionStorage.setItem(`adTimer_${adId}`, start);
+                showToast("✅ AdsGram এড সম্পন্ন! এখন ১০ সেকেন্ড অপেক্ষা করুন, তারপর 'পয়েন্ট নিন' ক্লিক করুন।");
+                
+                // ১০ সেকেন্ড পর অটো চেক
+                setTimeout(() => {
+                    const checkStart = sessionStorage.getItem(`adTimer_${adId}`);
+                    if(checkStart && (Date.now() - parseInt(checkStart)) >= 10000) {
+                        ad.status = "ready";
+                        renderDailyJobs();
+                        saveData();
+                        showToast(`✅ ${ad.id+1} নং এড: ১০ সেকেন্ড সম্পন্ন! এখন 'পয়েন্ট নিন' ক্লিক করুন।`);
+                    }
+                }, 10000);
+                
+            } catch(error) {
+                showToast("AdsGram এড লোড হয়নি, পরে আবার চেষ্টা করুন");
+                console.error(error);
+            }
+            
         } else if(ad.status === "ready") {
+            // পয়েন্ট ক্লেইম
             ad.status = "claimed";
             user.balance += ad.reward;
             user.totalEarned += ad.reward;
